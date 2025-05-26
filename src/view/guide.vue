@@ -1,0 +1,951 @@
+<template>
+  <!-- 任务总览引导页 -->
+  <div id="guide">
+    <el-container>
+      <el-header style="background-color: rgba(31, 41, 55); height: 64px">
+        <el-button class="header_button" type="text" @click="changePage(1)">
+          项目管理系统功能引导
+        </el-button>
+      </el-header>
+      <el-container>
+        <el-aside type="half" class="left_aside">
+          <left-menu :menuList="menuList" @ChangePage="changePage"></left-menu>
+        </el-aside>
+        <el-main>
+          <el-card shadow="always">
+            <div class="status_name">{{ title }}</div>
+            <!-- 项目总览 -->
+            <div class="explanation" v-if="showContent === 1">
+              <div class="explanation_title">项目信息</div>
+              <div class="explanation_value">项目名称：DLS系统项目</div>
+              <div class="explanation_value">状态：进行中</div>
+              <div class="explanation_value">开始日期：2025-01-01</div>
+              <div class="explanation_value">结束日期：2025-12-31</div>
+              <div class="explanation_value">预算：5,000,000 元</div>
+              <div class="explanation_value">团队规模：12 人</div>
+              <div class="explanation_value">整体进度：15%</div>
+            </div>
+            <!-- 项目时间线 -->
+            <div class="task_status" v-if="showContent === 1">
+              <div class="base_title">项目时间线</div>
+              <div
+                ref="projectTimeline"
+                style="width: 600px; height: 300px; margin: 0px auto"
+              ></div>
+            </div>
+            <!-- 任务状态分布 -->
+            <div class="task_status" v-if="showContent === 1">
+              <div class="base_title">任务状态分布</div>
+              <div
+                ref="allTask"
+                style="width: 400px; height: 400px; margin: 0px auto"
+              ></div>
+            </div>
+            <!-- 阶段进展汇总 -->
+            <div class="key_milestone" v-if="showContent === 1">
+              <div class="base_title">阶段进展汇总</div>
+              <el-table
+                :data="stageProgressList"
+                border
+                :header-cell-style="{
+                  backgroundColor: 'rgba(229, 231, 235)',
+                  color: '#303133',
+                  fontSize: '16px',
+                }"
+                style="width: 100%"
+              >
+                <el-table-column prop="stage" label="阶段" width="200">
+                </el-table-column>
+                <el-table-column label="状态">
+                  <template slot-scope="scope">
+                    <div v-if="scope.row.status === 1">已完成</div>
+                    <div v-else-if="scope.row.status === 2">进行中</div>
+                    <div v-else>未开始</div>
+                  </template>
+                </el-table-column>
+                <el-table-column
+                  prop="percentage"
+                  label="任务完成率"
+                  width="200"
+                >
+                </el-table-column>
+                <el-table-column label="对应交付物">
+                  <template slot-scope="scope">
+                    {{ scope.row.accomplish }}/{{ scope.row.all }}
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+            <!-- 阶段说明 -->
+            <div class="explanation" v-if="showContent !== 1">
+              <div class="explanation_title">阶段说明</div>
+              <div class="explanation_value">
+                {{ stageDescription || "暂无说明！" }}
+              </div>
+              <div class="explanation_hint">
+                提示：此阶段已完成，可进入下一阶段。
+              </div>
+              <div v-if="showContent === 2" class="explanation_time">
+                时间范围：2025-01-01 至 2025-02-15
+              </div>
+              <div class="explanation_status">已完成</div>
+            </div>
+            <!-- 关键里程碑 -->
+            <div class="key_milestone" v-if="showContent === 2">
+              <div class="base_title">关键里程碑</div>
+              <div
+                class="key_milestone_block"
+                v-for="(item, index) in milestoneList"
+                :key="index"
+              >
+                <div class="key_milestone_text">
+                  <div>{{ item.name }}</div>
+                  <div>{{ item.date }}</div>
+                </div>
+                <div v-if="item.status === 1" class="base_status">已完成</div>
+                <div
+                  v-else-if="item.status === 2"
+                  class="base_status status_ing"
+                >
+                  进行中
+                </div>
+                <div v-else class="base_status status_un">未完成</div>
+              </div>
+            </div>
+            <!-- 资源分配 -->
+            <div class="resource_allocation" v-if="showContent === 2">
+              <div class="base_title">资源分配</div>
+              <div
+                class="personnel"
+                v-for="(item, index) in personnelList"
+                :key="index"
+              >
+                {{ item.name }}({{ item.post }})
+              </div>
+            </div>
+            <!-- 风险概况 -->
+            <div class="key_milestone" v-if="showContent === 2">
+              <div class="base_title">风险概况</div>
+              <div class="key_milestone_block">
+                <div class="race_condition">投标竞争激烈</div>
+                <div class="contend_text">状态：已缓解</div>
+                <div class="contend_text">缓解措施：优化投标策略</div>
+              </div>
+            </div>
+            <!-- 任务状态 -->
+            <div class="task_status" v-if="showContent === 2">
+              <div class="base_title">任务状态</div>
+              <div
+                ref="taskStatus"
+                style="width: 400px; height: 200px; margin: 0px auto"
+              ></div>
+            </div>
+            <!-- 功能点与交付物 -->
+            <div class="key_milestone" v-if="showContent === 3">
+              <div class="base_title">功能点与交付物</div>
+              <el-table
+                :data="tableData"
+                border
+                :header-cell-style="{
+                  backgroundColor: 'rgba(243, 244, 246)',
+                  color: '#303133',
+                  fontSize: '16px',
+                }"
+                style="width: 100%"
+              >
+                <el-table-column label="功能点">
+                  <template slot-scope="scope">
+                    <div>{{ scope.row.CRRC_PFG_GNMC }}</div>
+                    <div>{{ scope.row.CRRC_PFG_GNSM }}</div>
+                    <div v-if="scope.row.status === 1" class="base_status">
+                      已完成
+                    </div>
+                    <div v-else-if="scope.row.status === 2" class="base_status">
+                      进行中
+                    </div>
+                    <div v-else class="base_status">未开始</div>
+                  </template>
+                </el-table-column>
+                <el-table-column label="对应交付物">
+                  <template slot-scope="scope">
+                    <div>{{ scope.row.CRRC_PFG_JFW }}</div>
+                    <div>{{ scope.row.CRRC_PFG_JFWSM }}</div>
+                    <!-- <div
+                      v-for="(item, index) in scope.row.deliverableList"
+                      :key="index"
+                    >
+                      {{ item }}
+                    </div> -->
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </el-card>
+          <!-- <router-view/> -->
+        </el-main>
+        <el-aside type="half" class="right_aside">
+          <right-chart ref="rightChart" :taskList="taskList"></right-chart>
+        </el-aside>
+      </el-container>
+    </el-container>
+  </div>
+</template>
+
+<script>
+import * as echarts from "echarts";
+import LeftMenu from "../components/LeftMenu.vue";
+import RightChart from "../components/RightChart.vue";
+import axios from "../assets/axios/index.js";
+export default {
+  name: "App",
+  components: {
+    LeftMenu,
+    RightChart,
+  },
+  data() {
+    return {
+      showContent: 2,
+      title: "",
+      // 左侧菜单
+      menuList: [
+        {
+          name: "前期阶段",
+          status: "Active",
+          nextList: [
+            {
+              name: "投标管理",
+              status: "Active",
+            },
+            {
+              name: "投标结果处理",
+              status: "Active",
+            },
+            {
+              name: "风险管理",
+              status: "Active",
+            },
+          ],
+        },
+        {
+          name: "启动阶段",
+          status: "Active",
+          nextList: [
+            {
+              name: "组建项目组",
+              status: "Active",
+            },
+            {
+              name: "启动会议",
+              status: "Active",
+            },
+            {
+              name: "沟通管理",
+              status: "Active",
+            },
+          ],
+        },
+        {
+          name: "执行阶段",
+          status: "Active",
+          nextList: [
+            {
+              name: "项目实施",
+              status: "Active",
+            },
+            {
+              name: "进度监控",
+              status: "Active",
+            },
+            {
+              name: "质量管理",
+              status: "Active",
+            },
+          ],
+        },
+        {
+          name: "收尾阶段",
+          status: "Active",
+          nextList: [
+            {
+              name: "项目验收",
+              status: "Active",
+            },
+            {
+              name: "项目总结",
+              status: "Active",
+            },
+            {
+              name: "后评价",
+              status: "Active",
+            },
+          ],
+        },
+      ],
+      stageProgressList: [
+        {
+          stage: "前期阶段",
+          status: 1,
+          percentage: "100.0%",
+          accomplish: 4,
+          all: 4,
+        },
+        {
+          stage: "启动阶段",
+          status: 2,
+          percentage: "100.0%",
+          accomplish: 5,
+          all: 5,
+        },
+        {
+          stage: "执行阶段",
+          status: 3,
+          percentage: "100.0%",
+          accomplish: 4,
+          all: 4,
+        },
+        {
+          stage: "收尾阶段",
+          status: 3,
+          percentage: "100.0%",
+          accomplish: 4,
+          all: 4,
+        },
+      ],
+      stageDescription: "前期阶段主要包括投标管理和投标结果处理，为项目启动奠定基础。",
+      // 里程碑列表
+      milestoneList: [
+        {
+          name: "投标文件提交",
+          date: "2025-01-20",
+          status: 1,
+        },
+        {
+          name: "中标确认",
+          date: "2025-02-10",
+          status: 2,
+        },
+        {
+          name: "中标确认",
+          date: "2025-02-10",
+          status: 3,
+        },
+      ],
+      // 资源分配列表
+      personnelList: [
+        {
+          name: "张伟",
+          post: "项目经理",
+        },
+        {
+          name: "李娜",
+          post: "商务专员",
+        },
+        {
+          name: "王强",
+          post: "技术顾问",
+        },
+      ],
+      // 功能点与交付物列表
+      tableData: [
+        {
+          name: "投标项目组成立",
+          title: "组建投标项目团队，明确职责分工。",
+          status: 1,
+          deliverableList: ["项目组名单: 暂无描述", "职责分工表: 暂无描述"],
+        },
+        {
+          name: "投标文件分析",
+          title: "分析招标文件，确定投标策略。",
+          status: 2,
+          deliverableList: ["投标策略报告: 暂无描述"],
+        },
+        {
+          name: "投标文件评审",
+          title: "评审投标文件，确保质量。",
+          status: 3,
+          deliverableList: ["评审记录: 暂无描述"],
+        },
+      ],
+      taskList: [
+        {
+          status: 1,
+          value: "2",
+          percentage: "25.0%",
+        },
+        {
+          status: 2,
+          value: "2",
+          percentage: "37.5%",
+        },
+        {
+          status: 3,
+          value: "3",
+          percentage: "37.5%",
+        },
+        {
+          value: "8",
+          percentage: "100%",
+        },
+      ],
+      projectTimelineChart: null,
+      allTaskChart: null,
+      taskStatusChart: null,
+      menuData: {
+        msg: "操作成功",
+        code: 200,
+        data: [
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "启动阶段",
+            CRRC_PFG_MKMC: "项目启动",
+            ID: 2,
+            TWOSTU: "Active",
+            TWOID: 1,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "制定项目章程",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 2,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "资源管理策划",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 3,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "整合管理策划",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 4,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "范围管理策划",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 5,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "制定项目计划",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 6,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "制定项目实施预算",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 7,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "质量管理策划",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 8,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "沟通管理策划",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 9,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "风险管理策划",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 10,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "采购管理策划",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 11,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "HSE及安保管理策划",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 12,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "接口管理策划",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 13,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "文件管理策划",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 14,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "施工管理策划",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 15,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "测试管理策划",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 16,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "培训管理策划",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 17,
+          },
+          {
+            ONESTU: "Active",
+            CRRC_PFG_JDMC: "策划阶段",
+            CRRC_PFG_MKMC: "其他",
+            ID: 3,
+            TWOSTU: "Active",
+            TWOID: 18,
+          },
+        ],
+      },
+      navigationTreeItem: {
+        msg: "操作成功",
+        code: 200,
+        data: [
+          {
+            CRRC_PFG_ID: "uxpkmn",
+            ID: 2,
+            CRRC_PFG_GNMC: "项目启动通知 功能名称测试",
+            TWOID: 1
+          },
+          {
+            CRRC_PFG_ID: "uxkom",
+            CRRC_PFG_JFW: "项目启动会会议纪要",
+            ID: 2,
+            CRRC_PFG_GNMC: "项目启动会 ",
+            TWOID: 1
+          }
+        ]
+      }
+    };
+  },
+  mounted() {
+    // sessionStorage.setItem("aaa", "123");
+    axios
+      .getMenuList()
+      .then((res) => {
+        const menuArr = [];
+        // this.menuData.data.forEach(el => {
+        res.data.data.forEach((el) => {
+          if (menuArr.find((_el) => _el.id === el.ID)) {
+            menuArr
+              .find((_el) => _el.id === el.ID)
+              .nextList.push({
+                id: el.ID,
+                twoid: el.TWOID,
+                name: el.CRRC_PFG_MKMC,
+                status: el.TWOSTU,
+              });
+          } else {
+            const obj = {
+              id: el.ID,
+              name: el.CRRC_PFG_JDMC,
+              status: el.ONESTU,
+              nextList: [
+                {
+                  id: el.ID,
+                  twoid: el.TWOID,
+                  name: el.CRRC_PFG_MKMC,
+                  status: el.TWOSTU,
+                },
+              ],
+            };
+            menuArr.push(obj);
+          }
+        });
+        this.menuList = [...menuArr];
+        // this.getPageData();
+      })
+      .catch((err) => {
+        console.log(err, "err");
+      });
+    this.initTaskChart();
+    this.title = this.menuList[0].name;
+  },
+  methods: {
+    getPageData(val) {
+      axios.getPageData(val)
+      .then(res => {
+        // this.tableData = [ ...this.navigationTreeItem.data ]
+        this.tableData = [ ...res.data.data ]
+        this.stageDescription = this.tableData.length > 0 ? this.tableData[0].CRRC_PFG_JDSM || "" : ""
+      })
+    },
+    initProjectChart() {
+      // 1. 获取DOM节点
+      const chartDom = this.$refs.projectTimeline;
+      // 2. 初始化图表
+      this.projectTimelineChart = echarts.init(chartDom);
+      // 3. 设置配置项
+      const option = {
+        grid: {
+          show: true,
+          top: 30, // 上边距（给标题留空间）
+          right: 10,
+          bottom: 50,
+          left: 60, // 左边距（给Y轴标签留空间）
+        },
+        graphic: [
+          {
+            type: "text",
+            left: "center",
+            bottom: 10,
+            style: {
+              text: "持续时间（天）",
+              fill: "#666",
+              fontSize: 12,
+            },
+          },
+        ],
+        title: {
+          text: "项目阶段时间线",
+          left: "center",
+          textStyle: {
+            fontSize: 16,
+          },
+        },
+        tooltip: {},
+        xAxis: [
+          {
+            type: "value",
+          },
+        ],
+        yAxis: [
+          {
+            type: "category",
+            data: ["收尾阶段", "执行阶段", "启动阶段", "前期阶段"],
+          },
+        ],
+        series: [
+          {
+            // name: "任务数量",
+            type: "bar",
+            data: [
+              { value: 60, itemStyle: { color: "#e74c3c" } },
+              { value: 213, itemStyle: { color: "#2ecc71" } },
+              { value: 43, itemStyle: { color: "#f39c12" } },
+              { value: 45, itemStyle: { color: "#3498db" } },
+            ],
+          },
+        ],
+      };
+      // 4. 渲染图表
+      this.projectTimelineChart.setOption(option);
+      // 窗口变化时自适应
+      window.addEventListener("resize", () =>
+        this.projectTimelineChart.resize()
+      );
+    },
+    initAllTaskChart() {
+      // 1. 获取DOM节点
+      const chartDom = this.$refs.allTask;
+      // 2. 初始化图表
+      this.allTaskChart = echarts.init(chartDom);
+      // 3. 设置配置项
+      const option = {
+        grid: {
+          top: 30, // 上边距（给标题留空间）
+          right: 10,
+          bottom: 50,
+          left: 60, // 左边距（给Y轴标签留空间）
+        },
+        title: {
+          text: "整体任务状态",
+          x: "center",
+        },
+        tooltip: {},
+        legend: {
+          orient: "horizontal",
+          icon: "rect",
+          x: "center",
+          itemGap: 10,
+          itemWidth: 42,
+          bottom: "0",
+          data: ["已完成", "进行中", "未开始"],
+        },
+        series: [
+          {
+            type: "pie",
+            label: {
+              // 必须配置
+              show: false, // 确保开启显示
+            },
+            radius: "80%",
+            center: ["50%", "50%"],
+            data: [
+              { value: 10, name: "已完成", itemStyle: { color: "#2ecc71" } },
+              { value: 3, name: "进行中", itemStyle: { color: "#f39c12" } },
+              { value: 18, name: "未开始", itemStyle: { color: "#bbb" } },
+            ],
+          },
+        ],
+      };
+      // 4. 渲染图表
+      this.allTaskChart.setOption(option);
+
+      // 窗口变化时自适应
+      window.addEventListener("resize", () => this.allTaskChart.resize());
+    },
+    initTaskChart() {
+      // 1. 获取DOM节点
+      const chartDom = this.$refs.taskStatus;
+      // 2. 初始化图表
+      this.taskStatusChart = echarts.init(chartDom);
+      // 3. 设置配置项
+      const option = {
+        grid: {
+          top: 20, // 上边距（给标题留空间）
+          right: 10,
+          bottom: 40,
+          left: 50, // 左边距（给Y轴标签留空间）
+        },
+        title: {
+          text: "阶段任务状态",
+          left: "center",
+          textStyle: {
+            fontSize: 14,
+          },
+        },
+        responsive: true,
+        tooltip: {},
+        xAxis: [
+          {
+            type: "value",
+            max: function (value) {
+              return value.max * 1; // 比最大值多10%的空间
+            },
+          },
+        ],
+        yAxis: [
+          {
+            type: "category",
+            data: ["未完成", "进行中", "已完成"],
+          },
+        ],
+        series: [
+          {
+            name: "任务数量",
+            type: "bar",
+            data: [
+              { value: 2, itemStyle: { color: "#bbb" } },
+              { value: 55, itemStyle: { color: "#f39c12" } },
+              { value: 3, itemStyle: { color: "#2ecc71" } },
+            ],
+          },
+        ],
+      };
+      // 4. 渲染图表
+      this.taskStatusChart.setOption(option);
+
+      // 窗口变化时自适应
+      window.addEventListener("resize", () => this.taskStatusChart.resize());
+    },
+    changePage(val) {
+      this.$refs.rightChart.myChart.dispose();
+      this.$refs.rightChart.myChart = null;
+      if (this.projectTimelineChart) {
+        this.projectTimelineChart.dispose();
+        this.projectTimelineChart = null;
+      }
+      if (this.allTaskChart) {
+        this.allTaskChart.dispose();
+        this.allTaskChart = null;
+      }
+      if (this.taskStatusChart) {
+        this.taskStatusChart.dispose();
+        this.taskStatusChart = null;
+      }
+      this.$nextTick(() => {
+        this.$refs.rightChart.initChart();
+      });
+      if (val === 1) {
+        this.showContent = val;
+        this.title = "项目总览";
+        this.$nextTick(() => {
+          this.initProjectChart();
+          this.initAllTaskChart();
+        });
+      } else if (val.nextList) {
+        this.showContent = 2;
+        this.title = val.name;
+        this.$nextTick(() => {
+          this.initTaskChart();
+        });
+      } else {
+        this.getPageData(val)
+        this.showContent = 3;
+        this.title = val.name;
+      }
+    },
+  },
+  beforeDestroy() {
+    // 组件销毁时移除监听并销毁图表
+    window.removeEventListener("resize", this.resizeHandler);
+  },
+};
+</script>
+<style lang="scss">
+.guide {
+  height: 100%;
+  overflow: hidden;
+}
+.el-container {
+  height: 100%;
+  overflow: hidden;
+  .el-header {
+    display: flex;
+    justify-content: center;
+    .header_button {
+      color: white;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .header_button:focus,
+    .header_button:hover {
+      color: #66b1ff;
+    }
+  }
+  .left_aside {
+    height: calc(100vh - 64px);
+    width: 320px !important;
+  }
+  .el-main {
+    // background-color: #2c3e50;
+    height: calc(100vh - 64px);
+    padding: 0px;
+    .el-card {
+      margin: 24px;
+      .el-card__body {
+        padding: 24px;
+        .status_name {
+          font-weight: 600;
+          font-size: 30px;
+          line-height: 36px;
+          margin-bottom: 24px;
+        }
+        .explanation {
+          margin-bottom: 24px;
+          padding: 24px;
+          border-radius: 4px;
+          border-left: 4px solid rgba(59, 130, 246);
+          background-color: rgba(239, 246, 255);
+          .explanation_title {
+            font-weight: 700;
+            font-size: 18px;
+            line-height: 28px;
+            color: rgba(55, 65, 81);
+          }
+          .explanation_value {
+            color: rgba(75, 85, 99);
+          }
+          .explanation_hint {
+            margin-top: 14px;
+            font-style: italic;
+            color: rgba(107, 114, 128);
+          }
+          .explanation_time {
+            margin-top: 10px;
+            color: rgba(75, 85, 99);
+          }
+          .explanation_status {
+            margin-top: 14px;
+            display: inline-block;
+            padding: 5px 16px;
+            border-radius: 4px;
+            background-color: rgba(16, 185, 129);
+            color: white;
+          }
+        }
+        .key_milestone {
+          margin-bottom: 24px;
+          .key_milestone_block {
+            margin-bottom: 16px;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(229, 231, 235);
+            .key_milestone_text {
+              margin-bottom: 8px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+          }
+        }
+        .resource_allocation {
+          margin-top: 24px;
+          margin-bottom: 24px;
+          .personnel {
+            display: inline-block;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 20px;
+            padding: 4px 12px;
+            background-color: rgba(229, 231, 235);
+            margin-right: 8px;
+          }
+        }
+        .key_milestone {
+          .key_milestone_block {
+            .race_condition {
+              font-weight: 500;
+              color: rgba(55, 65, 81);
+            }
+            .contend_text {
+              margin-top: 4px;
+              font-size: 14px;
+              line-height: 20px;
+              color: rgba(75, 85, 99);
+            }
+          }
+        }
+      }
+    }
+  }
+  .right_aside {
+    height: calc(100vh - 64px);
+    width: 640px !important;
+  }
+}
+</style>
