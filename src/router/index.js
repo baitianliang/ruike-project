@@ -13,6 +13,10 @@ export default new Router({
         path: '/BusinessForm',
         name: 'BusinessForm',
         component: () => import('../view/businessForm.vue'),
+      }, {
+        path: '/AesButton',
+        name: 'AesButton',
+        component: () => import('../view/aesButton.vue'),
       },
     ]
 })

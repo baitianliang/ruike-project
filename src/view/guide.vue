@@ -30,7 +30,7 @@
               <div class="base_title">项目时间线</div>
               <div
                 ref="projectTimeline"
-                style="width: 600px; height: 300px; margin: 0px auto"
+                style="width: 37.5rem; height: 300px; margin: 0px auto"
               ></div>
             </div>
             <!-- 任务状态分布 -->
@@ -38,7 +38,7 @@
               <div class="base_title">任务状态分布</div>
               <div
                 ref="allTask"
-                style="width: 400px; height: 400px; margin: 0px auto"
+                style="width: 25rem; height: 400px; margin: 0px auto"
               ></div>
             </div>
             <!-- 阶段进展汇总 -->
@@ -88,7 +88,14 @@
               <div v-if="showContent === 2" class="explanation_time">
                 时间范围：2025-01-01 至 2025-02-15
               </div>
-              <div class="explanation_status">已完成</div>
+              <!-- <div class="explanation_status">已完成</div> -->
+              <div v-if="stageStatus === '已完成'" class="explanation_status status_ed">
+                已完成
+              </div>
+              <div v-else-if="stageStatus === '进行中'" class="explanation_status status_ing">
+                进行中
+              </div>
+              <div v-else class="explanation_status status_un">未开始</div>
             </div>
             <!-- 关键里程碑 -->
             <div class="key_milestone" v-if="showContent === 2">
@@ -137,7 +144,7 @@
               <div class="base_title">任务状态</div>
               <div
                 ref="taskStatus"
-                style="width: 400px; height: 200px; margin: 0px auto"
+                style="width: 25rem; height: 200px; margin: 0px auto"
               ></div>
             </div>
             <!-- 功能点与交付物 -->
@@ -157,13 +164,13 @@
                   <template slot-scope="scope">
                     <div>{{ scope.row.CRRC_PFG_GNMC }}</div>
                     <div>{{ scope.row.CRRC_PFG_GNSM }}</div>
-                    <div v-if="scope.row.status === 1" class="base_status">
+                    <div v-if="scope.row.GNDZT === '已完成'" class="base_status status_ed">
                       已完成
                     </div>
-                    <div v-else-if="scope.row.status === 2" class="base_status">
+                    <div v-else-if="scope.row.GNDZT === '进行中'" class="base_status status_ing">
                       进行中
                     </div>
-                    <div v-else class="base_status">未开始</div>
+                    <div v-else class="base_status status_un">未开始</div>
                   </template>
                 </el-table-column>
                 <el-table-column label="对应交付物">
@@ -206,6 +213,7 @@ export default {
     return {
       showContent: 2,
       title: "",
+      stageStatus: "",
       // 左侧菜单
       menuList: [
         {
@@ -596,13 +604,14 @@ export default {
           }
         });
         this.menuList = [...menuArr];
+        this.title = this.menuList[0].name;
+        this.stageStatus = this.menuList[0].status
         // this.getPageData();
       })
       .catch((err) => {
         console.log(err, "err");
       });
     this.initTaskChart();
-    this.title = this.menuList[0].name;
   },
   methods: {
     getPageData(val) {
@@ -673,10 +682,15 @@ export default {
       };
       // 4. 渲染图表
       this.projectTimelineChart.setOption(option);
+
+      this.projectTimelineChart.resize()
       // 窗口变化时自适应
-      window.addEventListener("resize", () =>
+      window.addEventListener('resize', this.projectTimelineChartResize);
+    },
+    projectTimelineChartResize() {
+      this.$nextTick(() => {
         this.projectTimelineChart.resize()
-      );
+      })
     },
     initAllTaskChart() {
       // 1. 获取DOM节点
@@ -725,8 +739,14 @@ export default {
       // 4. 渲染图表
       this.allTaskChart.setOption(option);
 
+      this.allTaskChart.resize()
       // 窗口变化时自适应
-      window.addEventListener("resize", () => this.allTaskChart.resize());
+      window.addEventListener('resize', this.allTaskChartResize);
+    },
+    allTaskChartResize() {
+      this.$nextTick(() => {
+        this.allTaskChart.resize()
+      })
     },
     initTaskChart() {
       // 1. 获取DOM节点
@@ -779,21 +799,30 @@ export default {
       // 4. 渲染图表
       this.taskStatusChart.setOption(option);
 
+      this.taskStatusChart.resize()
       // 窗口变化时自适应
-      window.addEventListener("resize", () => this.taskStatusChart.resize());
+      window.addEventListener('resize', this.taskStatusChartResize);
+    },
+    taskStatusChartResize() {
+      this.$nextTick(() => {
+        this.taskStatusChart.resize()
+      })
     },
     changePage(val) {
       this.$refs.rightChart.myChart.dispose();
       this.$refs.rightChart.myChart = null;
       if (this.projectTimelineChart) {
+        window.removeEventListener('resize', this.projectTimelineChartResize);
         this.projectTimelineChart.dispose();
         this.projectTimelineChart = null;
       }
       if (this.allTaskChart) {
+        window.removeEventListener('resize', this.allTaskChartResize);
         this.allTaskChart.dispose();
         this.allTaskChart = null;
       }
       if (this.taskStatusChart) {
+        window.removeEventListener('resize', this.taskStatusChartResize);
         this.taskStatusChart.dispose();
         this.taskStatusChart = null;
       }
@@ -808,6 +837,7 @@ export default {
           this.initAllTaskChart();
         });
       } else if (val.nextList) {
+        this.stageStatus = val.status
         this.showContent = 2;
         this.title = val.name;
         this.$nextTick(() => {
@@ -815,6 +845,7 @@ export default {
         });
       } else {
         this.getPageData(val)
+        this.stageStatus = val.status
         this.showContent = 3;
         this.title = val.name;
       }
@@ -894,7 +925,7 @@ export default {
             display: inline-block;
             padding: 5px 16px;
             border-radius: 4px;
-            background-color: rgba(16, 185, 129);
+            // background-color: rgba(16, 185, 129);
             color: white;
           }
         }

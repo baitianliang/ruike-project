@@ -3,14 +3,13 @@
         <el-card shadow="always">
             <div>
                 <div class='title'>任务完成情况</div>
-                <div ref="taskCompletionStatus" style="width: 400px; height: 400px; margin: 0px auto;"></div>
+                <div ref="taskCompletionStatus" style="width: 25rem; height: 400px; margin: 0px auto;"></div>
                 <el-table
                     :data="taskList"
                     :header-cell-style="{backgroundColor: 'rgba(229, 231, 235)', color: '#303133', fontSize: '16px'}"
                     style="width: 100%">
                     <el-table-column
-                        label="状态"
-                        width="160">
+                        label="状态">
                         <template slot-scope="scope">
                             <div v-if="scope.row.status === 1">已完成</div>
                             <div v-else-if="scope.row.status === 2">进行中</div>
@@ -20,8 +19,7 @@
                     </el-table-column>
                     <el-table-column
                         prop="value"
-                        label="任务数量"
-                        width="200">
+                        label="任务数量">
                     </el-table-column>
                     <el-table-column
                         prop="percentage"
@@ -40,7 +38,7 @@ export default {
     props: ['taskList'],
     data() {
         return {
-            myChart: null
+            myChart: null,
         }
     },
     mounted() {
@@ -130,7 +128,7 @@ export default {
     },
     beforeDestroy() {
         // 组件销毁时移除监听并销毁图表
-        window.removeEventListener('resize', this.resizeHandler);
+        window.removeEventListener('resize', () => this.myChart.resize());
         if (this.myChart) this.myChart.dispose();
     }
 }

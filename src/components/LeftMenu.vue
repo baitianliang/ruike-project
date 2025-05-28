@@ -5,11 +5,11 @@
         </div>
         <div v-for="(item, index) in menuList" :key="index">
             <div>
-                <el-button v-if="item.status === 'Active'" round class="top_menu" @click="changePage(item)">
+                <el-button v-if="item.status === '已完成'" round class="top_menu" @click="changePage(item)">
                     <span class="menu_status status_ed"></span>
                     {{ item.name }}
                 </el-button>
-                <el-button v-else-if="item.status === 2" round class="top_menu" @click="changePage(item)">
+                <el-button v-else-if="item.status === '进行中'" round class="top_menu" @click="changePage(item)">
                     <span class="menu_status status_ing"></span>
                     {{ item.name }}
                 </el-button>
@@ -19,11 +19,11 @@
                 </el-button>
                 <div class="next_menu">
                     <div v-for="(item2, index2) in item.nextList" :key="index2">
-                        <el-button v-if="item2.status === 'Active'" round @click="changePage(item2, item)">
+                        <el-button v-if="item2.status === '已完成'" round @click="changePage(item2, item)">
                             <span class="menu_status status_ed"></span>
                             {{ item2.name }}
                         </el-button>
-                        <el-button v-else-if="item2.status === 2" round @click="changePage(item2, item)">
+                        <el-button v-else-if="item2.status === '进行中'" round @click="changePage(item2, item)">
                             <span class="menu_status status_ing"></span>
                             {{ item2.name }}
                         </el-button>

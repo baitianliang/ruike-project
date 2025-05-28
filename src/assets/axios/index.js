@@ -9,10 +9,10 @@ export default {
     },
     // 获取菜单接口
     getMenuList() {
-        return instance.get(`getNavigationTree`)
+        return instance.get(`getNavigationTree?projectId=1010`)
     },
     // 二级菜单获取页面信息
     getPageData(val) {
-        return instance.get(`getNavigationTreeItem?id=${val.id}&twoid=${val.twoid}`)
+        return instance.get(`getNavigationTreeItem?id=${val.id}&twoid=${val.twoid}&projectId=1010`)
     }
 }
