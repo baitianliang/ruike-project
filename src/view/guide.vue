@@ -162,15 +162,17 @@
               >
                 <el-table-column label="功能点">
                   <template slot-scope="scope">
-                    <div>{{ scope.row.CRRC_PFG_GNMC }}</div>
-                    <div>{{ scope.row.CRRC_PFG_GNSM }}</div>
-                    <div v-if="scope.row.GNDZT === '已完成'" class="base_status status_ed">
-                      已完成
+                    <div class="jump_link" @click="goLink(scope.row)">
+                      <div>{{ scope.row.CRRC_PFG_GNMC }}</div>
+                      <div>{{ scope.row.CRRC_PFG_GNSM }}</div>
+                      <div v-if="scope.row.GNDZT === '已完成'" class="base_status status_ed">
+                        已完成
+                      </div>
+                      <div v-else-if="scope.row.GNDZT === '进行中'" class="base_status status_ing">
+                        进行中
+                      </div>
+                      <div v-else class="base_status status_un">未开始</div>
                     </div>
-                    <div v-else-if="scope.row.GNDZT === '进行中'" class="base_status status_ing">
-                      进行中
-                    </div>
-                    <div v-else class="base_status status_un">未开始</div>
                   </template>
                 </el-table-column>
                 <el-table-column label="对应交付物">
@@ -631,6 +633,11 @@ export default {
         this.$refs.rightChart.initChart();
       });
     },
+    goLink(row) {
+      console.log(row, "row");
+      console.log(window.location.href)
+      // window.location.href = `https://dls.4dlp.com.cn:7102/bp/mod/bp/log?model=uxocin&uuu_dataPickerDe=&src_model=&bulk=&logtype=bplog&consolidate=&restr_status=&datapickerDe=&configBpLogType=&__uref=uuu428513624t5&admin_updates=&isPlanningSheet=0&activePlanningSheetId=0&isPortfolio=false`
+    },
     initProjectChart() {
       // 1. 获取DOM节点
       const chartDom = this.$refs.projectTimeline;
@@ -876,6 +883,12 @@ export default {
 .guide {
   height: 100%;
   overflow: hidden;
+}
+.jump_link {
+  cursor: pointer;
+  &:hover {
+    color: teal;
+  }
 }
 .el-container {
   height: calc(100% - 64px);
