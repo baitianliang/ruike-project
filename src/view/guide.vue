@@ -614,13 +614,22 @@ export default {
     this.initTaskChart();
   },
   methods: {
-    getPageData(val) {
-      axios.getPageData(val)
-      .then(res => {
-        // this.tableData = [ ...this.navigationTreeItem.data ]
-        this.tableData = [ ...res.data.data ]
-        this.stageDescription = this.tableData.length > 0 ? this.tableData[0].CRRC_PFG_JDSM || "" : ""
-      })
+    async getPageData(val) {
+      const res = await axios.getPageData(val)
+      this.tableData = [ ...res.data.data.list ]
+      let statistics = res.data.data.statistics
+      this.taskList[0].value = statistics.ywcsl
+      this.taskList[0].percentage = statistics.ywcbfb
+      this.taskList[1].value = statistics.jxzsl
+      this.taskList[1].percentage = statistics.jxzbfb
+      this.taskList[2].value = statistics.wkssl
+      this.taskList[2].percentage = statistics.wksbfb
+      this.taskList[3].value = statistics.ywcsl + statistics.jxzsl + statistics.wkssl
+      this.taskList[3].percentage = this.taskList[3].value === 0 ? '0%' : '100%'
+      this.stageDescription = this.tableData.length > 0 ? this.tableData[0].CRRC_PFG_JDSM || "" : ""
+      this.$nextTick(() => {
+        this.$refs.rightChart.initChart();
+      });
     },
     initProjectChart() {
       // 1. 获取DOM节点
@@ -693,6 +702,17 @@ export default {
       })
     },
     initAllTaskChart() {
+      const data = JSON.parse(JSON.stringify(this.taskList))
+      const obj = data.find(el => el.status === 1)
+      obj.name = '已完成'
+      obj.itemStyle = { color: '#2ecc71' }
+      const obj2 = data.find(el => el.status === 2)
+      obj2.name = '进行中'
+      obj2.itemStyle = { color: '#f39c12' }
+      const obj3 = data.find(el => el.status === 3)
+      obj3.name = '未开始'
+      obj3.itemStyle = { color: '#bbb' }
+      data.pop()
       // 1. 获取DOM节点
       const chartDom = this.$refs.allTask;
       // 2. 初始化图表
@@ -728,11 +748,7 @@ export default {
             },
             radius: "80%",
             center: ["50%", "50%"],
-            data: [
-              { value: 10, name: "已完成", itemStyle: { color: "#2ecc71" } },
-              { value: 3, name: "进行中", itemStyle: { color: "#f39c12" } },
-              { value: 18, name: "未开始", itemStyle: { color: "#bbb" } },
-            ],
+            data,
           },
         ],
       };
@@ -809,8 +825,6 @@ export default {
       })
     },
     changePage(val) {
-      this.$refs.rightChart.myChart.dispose();
-      this.$refs.rightChart.myChart = null;
       if (this.projectTimelineChart) {
         window.removeEventListener('resize', this.projectTimelineChartResize);
         this.projectTimelineChart.dispose();
@@ -826,17 +840,18 @@ export default {
         this.taskStatusChart.dispose();
         this.taskStatusChart = null;
       }
-      this.$nextTick(() => {
-        this.$refs.rightChart.initChart();
-      });
       if (val === 1) {
-        this.showContent = val;
-        this.title = "项目总览";
-        this.$nextTick(() => {
-          this.initProjectChart();
-          this.initAllTaskChart();
-        });
+        this.getPageData({})
+        .then(() => {
+          this.showContent = val;
+          this.title = "项目总览";
+          this.$nextTick(() => {
+            this.initProjectChart();
+            this.initAllTaskChart();
+          });
+        })
       } else if (val.nextList) {
+        this.getPageData(val)
         this.stageStatus = val.status
         this.showContent = 2;
         this.title = val.name;
@@ -863,7 +878,7 @@ export default {
   overflow: hidden;
 }
 .el-container {
-  height: 100%;
+  height: calc(100% - 64px);
   overflow: hidden;
   .el-header {
     display: flex;

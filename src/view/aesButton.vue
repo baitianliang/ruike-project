@@ -23,7 +23,7 @@ export default {
       const base64Token = CryptoJS.enc.Base64.stringify(
         CryptoJS.enc.Utf8.parse(encrypted)
       );
-      window.location.href = `http://10.73.60.92:18083/#/?token=${base64Token}`
+      window.location.href = `https://dls.4dlp.com.cn:7102/bim/#/?token=${base64Token}`
 
       // console.log("加密结果:", base64Token);
       // 解密

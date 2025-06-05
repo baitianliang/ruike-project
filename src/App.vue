@@ -7,6 +7,23 @@
 <script>
 export default {
   name: "App",
+  created() {
+    // 跳转单点登录（判断是否通过iframe嵌套此项目）
+    if(window === window.parent) {
+    //   return window.location.href = `https://dls.4dlp.com.cn:7102/unifier`
+    } else {
+      console.log(window.parent._P.projectId)
+    }
+
+    // 跳转单点登录（判断能否通过class名获取用户名称）
+    // const divList = document.getElementsByClassName('nav-btn-color');
+    // if (divList.length === 0) {
+    //   return window.location.href = `https://dls.4dlp.com.cn:7102/unifier`
+    // }
+    // if(!document.getElementsByClassName('nav-btn-color')[3].innerText) {
+    //   return window.location.href = `https://dls.4dlp.com.cn:7102/unifier`
+    // }
+  },
 };
 </script>
 <style lang="scss">
