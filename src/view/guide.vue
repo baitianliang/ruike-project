@@ -2,7 +2,7 @@
   <!-- 任务总览引导页 -->
   <div id="guide">
     <el-container>
-      <el-header style="background-color: rgba(31, 41, 55); height: 64px">
+      <el-header style="background-color: rgba(199, 1, 26); height: 64px">
         <el-button class="header_button" type="text" @click="changePage(1)">
           项目管理系统功能引导
         </el-button>

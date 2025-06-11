@@ -42,14 +42,22 @@
               <el-table-column
                 v-for="(_item, _index) in item.children"
                 :key="_index"
-                :prop="_item.level"
-                :label="_item.levelName + '-' + _item.level"
                 :formatter="(row) => row[_item.level]">
-                <template #default="{ row }">
-                  <div>
-                    {{ row[_item.level] }}  <!-- 正确读取带特殊字符的字段 -->
-                  </div>
+                <template slot="header">
+                  <div class="vertical-header">{{ _item.levelName }}</div>
                 </template>
+                <el-table-column
+                  :prop="_item.level"
+                  :formatter="(row) => row[_item.level]">
+                  <template slot="header">
+                    <div class="vertical-header">{{ _item.level }}</div>
+                  </template>
+                  <template #default="{ row }">
+                    <div>
+                      {{ row[_item.level] }}  <!-- 正确读取带特殊字符的字段 -->
+                    </div>
+                  </template>
+                </el-table-column>
               </el-table-column>
             </template>
           </el-table-column>
@@ -89,26 +97,26 @@ export default {
   components: {},
   data() {
     return {
-      activeName: 'reference',
+      activeName: 'matrix',
       tableHeight: '100%',
       dataList: [],
       firstTableColumn: [
         {
-          prop: "name",
-          label: "系统工作包",
-        },
-        {
-          prop: "level",
-          label: "结构编号",
-        },
-        {
           prop: "levelName",
-          label: "结构名称",
+          label: "",
         },
-        {
-          prop: "pd",
-          label: "接口类型",
-        },
+        // {
+        //   prop: "level",
+        //   label: "结构编号",
+        // },
+        // {
+        //   prop: "levelName",
+        //   label: "结构名称",
+        // },
+        // {
+        //   prop: "pd",
+        //   label: "接口类型",
+        // },
       ],
       firstTableData: [],
       secondTableColumn: [
@@ -187,10 +195,44 @@ export default {
       const res = await axios.getFirstTableList()
       this.dataList = res.data.data
       let CRRC_SPS_NUMBER_L1 = ''
+      let obj = {}
       this.dataList.forEach(el => {
+        if(!this.firstTableColumn.find(_el => _el.label === el.CRRC_SWP_GZBMC)) {
+          this.firstTableColumn.push({prop: el.CRRC_SWP_GZBMC, label: el.CRRC_SWP_GZBMC})
+        }
+        if(this.firstTableData.length && el.CRRC_SPS_NAME_L1 === this.firstTableData[this.firstTableData.length - 1].firstLevel) {
+          if(el.CRRC_SPS_NAME_L2 === this.firstTableData[this.firstTableData.length - 1].secondLevel) {
+            obj[el.CRRC_SWP_GZBMC] = el.CRRC_SPS_JKJS_PD
+          } else {
+            this.firstTableData[this.firstTableData.length - 1].secondLevel = el.CRRC_SPS_NAME_L2
+            this.firstTableData[this.firstTableData.length - 1].children.push(obj)
+            obj = JSON.parse(JSON.stringify({
+              id: this.firstTableData.length + 1 + '-1',
+              levelName: el.CRRC_SPS_NAME_L2,
+              [el.CRRC_SWP_GZBMC]: el.CRRC_SPS_JKJS_PD
+            }))
+          }
+        } else {
+          // CRRC_SPS_NUMBER_L1 = el.CRRC_SPS_NUMBER_L1
+          if(this.firstTableData.length) {
+            this.firstTableData[this.firstTableData.length - 1].children.push(obj)
+          }
+          this.firstTableData.push({
+            id: this.firstTableData.length + 1,
+            firstLevel: el.CRRC_SPS_NAME_L1,
+            secondLevel: el.CRRC_SPS_NAME_L2,
+            levelName: el.CRRC_SPS_NAME_L1,
+            children: []
+          })
+          obj = JSON.parse(JSON.stringify({
+            id: this.firstTableData.length + 1 + '-1',
+            levelName: el.CRRC_SPS_NAME_L2,
+            [el.CRRC_SWP_GZBMC]: el.CRRC_SPS_JKJS_PD
+          }))
+        }
         if(el.CRRC_SPS_NUMBER_L1 === CRRC_SPS_NUMBER_L1) {
-          this.firstTableData[this.firstTableData.length - 1].children.push({
-            id: `${this.firstTableData[this.firstTableData.length - 1].id}-${(this.firstTableData[this.firstTableData.length - 1].children.length + 1)}`,
+          this.secondTableColumn[this.secondTableColumn.length - 1].children.push({
+            id: `${this.secondTableColumn[this.secondTableColumn.length - 1].id}-${(this.secondTableColumn[this.secondTableColumn.length - 1].children.length + 1)}`,
             level: el.CRRC_SPS_NUMBER_L2,
             levelName: el.CRRC_SPS_NAME_L2,
             name: el.CRRC_SWP_GZBMC,
@@ -198,12 +240,12 @@ export default {
           })
         } else {
           CRRC_SPS_NUMBER_L1 = el.CRRC_SPS_NUMBER_L1
-          this.firstTableData.push({
-            id: this.firstTableData.length + 1,
+          this.secondTableColumn.push({
+            id: this.secondTableColumn.length + 1,
             level: el.CRRC_SPS_NUMBER_L1,
             levelName: el.CRRC_SPS_NAME_L1,
             children: [{
-              id: this.firstTableData.length + 1 + '-1',
+              id: this.secondTableColumn.length + 1 + '-1',
               level: el.CRRC_SPS_NUMBER_L2,
               levelName: el.CRRC_SPS_NAME_L2,
               name: el.CRRC_SWP_GZBMC,
@@ -212,12 +254,14 @@ export default {
           })
         }
       });
+      this.firstTableData[this.firstTableData.length - 1].children.push(obj)
+      this.firstTableColumn = JSON.parse(JSON.stringify(this.firstTableColumn))
       this.$nextTick(() => {
         this.getSecondTable()
       })
     },
     getSecondTable() {
-      this.secondTableColumn = [ ...this.secondTableColumn, ...this.firstTableData ]
+      // this.secondTableColumn = [ ...this.secondTableColumn, ...this.secondTableColumn ]
       this.dataList.forEach(el => {
         let obj = {
           firstLevel: el.CRRC_SPS_NAME_L1,
@@ -303,6 +347,13 @@ export default {
       height: calc(100% - 40px);
       .el-tab-pane {
         height: 100%;
+        .vertical-header {
+          writing-mode: sideways-lr; 
+          // transform: rotate(180deg); /* 旋转180度使文字正立 */
+          text-align: center;
+          white-space: nowrap;
+          margin: 0 auto;
+        }
       }
     }
   }
