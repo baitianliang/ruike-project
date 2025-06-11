@@ -122,6 +122,7 @@ export default {
       secondTableColumn: [
         { prop: "firstLevel" },
         { prop: "secondLevelName" },
+        { prop: "secondLevel" },
       ],
       secondTableData: [],
       secondData: [],
@@ -265,7 +266,7 @@ export default {
       this.dataList.forEach(el => {
         let obj = {
           firstLevel: el.CRRC_SPS_NAME_L1,
-          secondLevelName: `${el.CRRC_SPS_NAME_L1}-${el.CRRC_SPS_NUMBER_L2}`,
+          secondLevelName: el.CRRC_SPS_NAME_L1,
           secondLevel: el.CRRC_SPS_NUMBER_L2
         }
         this.secondTableData.push(obj)
@@ -297,7 +298,7 @@ export default {
       }
     },
     handleCellStyle({ row, column, columnIndex }) {
-      if(columnIndex > 1 && row[column.property]) {
+      if(columnIndex > 2 && row[column.property]) {
         return {
           // backgroundColor: '',
           color: 'teal',
