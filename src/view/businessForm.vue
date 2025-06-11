@@ -97,7 +97,7 @@ export default {
   components: {},
   data() {
     return {
-      activeName: 'matrix',
+      activeName: 'reference',
       tableHeight: '100%',
       dataList: [],
       firstTableColumn: [
@@ -266,7 +266,7 @@ export default {
       this.dataList.forEach(el => {
         let obj = {
           firstLevel: el.CRRC_SPS_NAME_L1,
-          secondLevelName: el.CRRC_SPS_NAME_L1,
+          secondLevelName: el.CRRC_SPS_NAME_L2,
           secondLevel: el.CRRC_SPS_NUMBER_L2
         }
         this.secondTableData.push(obj)
@@ -308,7 +308,7 @@ export default {
       }
     },
     handleCellClick(row, column) {
-      if(row[column.property] && !['firstLevel', 'secondLevelName'].includes(column.property)) {
+      if(row[column.property] && !['firstLevel', 'secondLevelName', 'secondLevel'].includes(column.property)) {
         this.activeName = 'register'
         let obj = this.thirdTableData.find(el => el.CRRC_PIR_07 === row[column.property])
         this.$refs.thirdTable.setCurrentRow(obj);
